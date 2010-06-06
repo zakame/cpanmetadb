@@ -1,23 +1,37 @@
 #!/usr/bin/env perl
 
 use Mojolicious::Lite;
+use MojoX::Renderer::YAML;
+use Parse::CPAN::Packages;
 
-get '/' => 'index';
+# not application/x-yaml for now
+app->types->type( yml => 'text/x-yaml' );
+my $render = MojoX::Renderer::YAML->build( SortKeys => 1 );
+app->renderer->add_handler( yml => $render );
 
-get '/:groovy' => sub {
+my $packages = Parse::CPAN::Packages->new("02packages.details.txt.gz");
+
+get '/v1.0/package/:name' => sub {
     my $self = shift;
-    $self->render_text($self->param('groovy'), layout => 'funky');
+
+    my $mod = $packages->package( $self->param('name') );
+
+    if ( defined $mod ) {
+        my $dist   = $mod->distribution;
+        my $result = {
+            distfile => $dist->prefix,
+            version  => $dist->version,
+        };
+
+        $self->render(
+            format  => 'yml',
+            handler => 'yml',
+            result  => $result,
+        );
+    }
+    else {
+        $self->render_text( '', status => 404 );
+    }
 };
 
 shagadelic;
-__DATA__
-
-@@ index.html.ep
-% layout 'funky';
-Yea baby!
-
-@@ layouts/funky.html.ep
-<!doctype html><html>
-    <head><title>Funky!</title></head>
-    <body><%== content %></body>
-</html>
