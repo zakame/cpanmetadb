@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use Mojo::Server::PSGI;
 use Plack::Builder;
@@ -10,7 +10,7 @@ my $app = sub { $psgi->run(@_) };
 
 builder {
     enable "Static",
-      path => sub { s!^(/|/index.html)$!/index.html! },
+      path => sub { s!^/$!/index.html! },
       root => 'public/';
     $app;
 };
