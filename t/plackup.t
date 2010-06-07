@@ -9,6 +9,7 @@ use Plack::Test;
 use Plack::Util;
 use HTTP::Request::Common;
 
+$ENV{MOJO_HOME} = "$FindBin::Bin/../";
 my $app = Plack::Util::load_psgi( "$FindBin::Bin/../app.psgi" );
 
 test_psgi $app, sub {

@@ -7,7 +7,8 @@ use Test::More;
 use Test::Mojo;
 
 use FindBin;
-require "$FindBin::Bin/../CPANMetaDB";
+$ENV{MOJO_HOME} = "$FindBin::Bin/../";
+require "$ENV{MOJO_HOME}/CPANMetaDB";
 
 # Test
 my $t = Test::Mojo->new;
