@@ -12,6 +12,14 @@ require "$FindBin::Bin/../CPANMetaDB";
 # Test
 my $t = Test::Mojo->new;
 
+$t->get_ok('/index.html')
+  ->status_is(200)->content_type_is('text/html')
+  ->content_like(qr#CPAN Meta DB#i);
+
+$t->get_ok('/')
+  ->status_is(200)->content_type_is('text/html')
+  ->content_like(qr#CPAN Meta DB#i);
+
 $t->get_ok('/v1.0/package/App::cpanminus')
   ->status_is(200)->content_type_is('text/x-yaml')
   ->content_like(qr#distfile: M/MI/MIYAGAWA/App-cpanminus-#i);

@@ -11,6 +11,8 @@ app->renderer->add_handler( yml => $render );
 
 my $packages = Parse::CPAN::Packages->new("02packages.details.txt.gz");
 
+get '/' => sub { shift->render_static('index.html') };
+
 get '/v1.0/package/:name' => sub {
     my $self = shift;
 
