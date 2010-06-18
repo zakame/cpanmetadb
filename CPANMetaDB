@@ -1,30 +1,87 @@
 #!/usr/bin/env perl
 
+package Model;
+
+use ORLite {
+    file    => 'cpanmeta.db',
+    cleanup => 'VACUUM',
+    create  => sub {
+        my $dbh = shift;
+        $dbh->do(
+            'CREATE TABLE package (name     TEXT NOT NULL UNIQUE PRIMARY KEY,
+                                   distfile TEXT NOT NULL,
+                                   version  TEXT
+                                  );'
+        );
+    },
+};
+
+sub get_info_for {
+    return Model->selectrow_hashref(
+        "SELECT distfile, version
+           FROM package
+           WHERE name = ?", {}, $_[0],
+    );
+}
+
+package Mojolicious::Command::Initdb;
+
+use base 'Mojo::Command';
+
+use Mojo::Client;
+use Parse::CPAN::Packages;
+
+__PACKAGE__->attr( description => <<'EOF');
+Initialize CPAN Meta database.
+EOF
+__PACKAGE__->attr( usage => <<'EOF');
+usage: $0 initdb
+EOF
+
+# HOMER: nu-cu-ler its pronounce nu-cu-ler
+sub run {
+    my $self = shift;
+
+    # CPAN Package List
+    my $details = Mojo::Client->new->get(
+        "http://www.cpan.org/modules/02packages.details.txt.gz" )
+      ->success->body;
+    my $p = Parse::CPAN::Packages->new($details);
+
+    # Clear the database
+    Model::Package->truncate;
+
+    # push to DB
+    for my $pkg ( $p->packages ) {
+        Model::Package->create(
+            name     => $pkg->package,
+            distfile => $pkg->distribution->prefix,
+            version  => $pkg->distribution->version,
+        );
+        Model->commit_begin;
+    }
+
+    return $self;
+}
+
+package main;
+
 use Mojolicious::Lite;
 use MojoX::Renderer::YAML;
-use Parse::CPAN::Packages;
 
 # not application/x-yaml for now
 app->types->type( yml => 'text/x-yaml' );
 my $render = MojoX::Renderer::YAML->build( SortKeys => 1 );
 app->renderer->add_handler( yml => $render );
 
-my $packages = Parse::CPAN::Packages->new("02packages.details.txt.gz");
-
 get '/' => sub { shift->render_static('index.html') };
 
 get '/v1.0/package/:name' => sub {
     my $self = shift;
 
-    my $mod = $packages->package( $self->param('name') );
+    my $result = Model::get_info_for($self->param('name'));
 
-    if ( defined $mod ) {
-        my $dist   = $mod->distribution;
-        my $result = {
-            distfile => $dist->prefix,
-            version  => $dist->version,
-        };
-
+    if ( ref $result ) {
         $self->render(
             format  => 'yml',
             handler => 'yml',
