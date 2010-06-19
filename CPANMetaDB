@@ -76,8 +76,10 @@ app->types->type( yml => 'text/x-yaml' );
 my $render = MojoX::Renderer::YAML->build( SortKeys => 1 );
 app->renderer->add_handler( yml => $render );
 
+# /
 get '/' => sub { shift->render_static('index.html') };
 
+# /v1.0/package/Some::Module::Name
 get '/v1.0/package/:name' => sub {
     my $self = shift;
 
@@ -95,4 +97,4 @@ get '/v1.0/package/:name' => sub {
     }
 };
 
-shagadelic;
+app->start;
