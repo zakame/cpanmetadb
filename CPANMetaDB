@@ -52,14 +52,16 @@ sub run {
     Model::Package->truncate;
 
     # push to DB
+    Model->begin;
     for my $pkg ( $p->packages ) {
+        my $dist = $pkg->distribution;
         Model::Package->create(
             name     => $pkg->package,
-            distfile => $pkg->distribution->prefix,
-            version  => $pkg->distribution->version,
+            distfile => $dist->prefix,
+            version  => $dist->version,
         );
-        Model->commit_begin;
     }
+    Model->commit;
 
     return $self;
 }
