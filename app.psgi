@@ -12,5 +12,8 @@ builder {
     enable "Static",
       path => sub { s!^/$!/index.html! },
       root => 'public/';
+    enable "Static",
+      path => qr!^/index.html!,
+      root => 'public/';
     $app;
 };
