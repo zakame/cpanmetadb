@@ -13,8 +13,9 @@ use Model::CPANMetaDB;
 # not application/x-yaml for now
 app->types->type(yml => 'text/x-yaml');
 
-# /
+# / or /index.html
 get '/' => 'index';
+get '/index.html' => 'index';
 
 # /v1.0/package/Some::Module::Name
 get '/v1.0/package/:name' => sub {
