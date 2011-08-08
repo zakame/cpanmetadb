@@ -15,6 +15,7 @@ WriteMakefile(
   PREREQ_PM => {
     'LWP::Simple'           => 0,
     'Mojolicious'           => '1.0',
+    'ORLite'                => 0,
     'Parse::CPAN::Packages' => 0,
     'Plack'                 => 0,
   },
