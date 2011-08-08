@@ -1,6 +1,12 @@
 #!/usr/bin/env perl
 
-use File::Temp 'tempfile';
+use File::Basename 'dirname';
+use File::Spec;
+
+use lib join '/', File::Spec->splitdir(dirname(__FILE__)), 'lib';
+use lib join '/', File::Spec->splitdir(dirname(__FILE__)), '..', 'lib';
+
+use File::Temp ();
 use LWP::Simple;
 use Model::CPANMetaDB;
 use Parse::CPAN::Packages;
@@ -9,7 +15,7 @@ my $ua = LWP::UserAgent->new;
 my $URL = "http://www.cpan.org/modules/02packages.details.txt.gz";
 
 # CPAN Package List
-my (undef, $details) = tempfile(SUFFIX => '.gz');
+my $details = File::Temp->new(SUFFIX => '.gz')->filename;
 getstore($URL, $details);
 die "Could not get CPAN packages details: $!" unless defined $details;
 my $p = Parse::CPAN::Packages->new($details);
