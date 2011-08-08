@@ -14,11 +14,11 @@ require "$ENV{MOJO_HOME}/CPANMetaDB";
 my $t = Test::Mojo->new;
 
 $t->get_ok('/index.html')
-  ->status_is(200)->content_type_is('text/html')
+  ->status_is(200)->content_type_like(qr'text/html')
   ->content_like(qr#CPAN Meta DB#i);
 
 $t->get_ok('/')
-  ->status_is(200)->content_type_is('text/html')
+  ->status_is(200)->content_type_like(qr'text/html')
   ->content_like(qr#CPAN Meta DB#i);
 
 $t->get_ok('/v1.0/package/App::cpanminus')
@@ -26,6 +26,6 @@ $t->get_ok('/v1.0/package/App::cpanminus')
   ->content_like(qr#distfile: M/MI/MIYAGAWA/App-cpanminus-#i);
 
 $t->get_ok('/v1.0/package/Some::Nonexistent::Module')
-  ->status_is(404)->content_type_is('text/html');
+  ->status_is(404)->content_type_like(qr'text/html');
 
 done_testing;
