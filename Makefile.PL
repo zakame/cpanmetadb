@@ -16,7 +16,7 @@ WriteMakefile(
     'LWP::Simple'           => 0,
     'Mojolicious'           => '1.0',
     'Parse::CPAN::Packages' => 0,
-    'Plackup'               => 0,
+    'Plack'                 => 0,
   },
   test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t'}
 );
