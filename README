@@ -1,0 +1,10 @@
+=head1 CPANMetaDB
+
+This is Zak's Perlish rewrite of Tatsuhiko Miyagawa's CPAN Meta DB,
+hosted at Google AppEngine (http://cpanmetadb.appspot.com).  This exists
+mostly as a personal exercise to use Perl and Mojolicious, and for
+testing on cloud environments such as DotCloud.
+
+See it live (soon) at http://cpanmetadb.zakame.net
+
+=cut
