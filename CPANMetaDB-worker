@@ -1,0 +1,30 @@
+#!/usr/bin/env perl
+
+use File::Temp 'tempfile';
+use LWP::Simple;
+use Model::CPANMetaDB;
+use Parse::CPAN::Packages;
+
+my $ua = LWP::UserAgent->new;
+my $URL = "http://www.cpan.org/modules/02packages.details.txt.gz";
+
+# CPAN Package List
+my (undef, $details) = tempfile(SUFFIX => '.gz');
+getstore($URL, $details);
+die "Could not get CPAN packages details: $!" unless defined $details;
+my $p = Parse::CPAN::Packages->new($details);
+
+# Clear the database
+Model::CPANMetaDB::Package->truncate;
+
+# push to DB
+Model::CPANMetaDB->begin;
+for my $pkg ($p->packages) {
+  my $dist = $pkg->distribution;
+  Model::CPANMetaDB::Package->create(
+    name     => $pkg->package,
+    distfile => $dist->prefix,
+    version  => $dist->version,
+  );
+}
+Model::CPANMetaDB->commit;
