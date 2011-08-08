@@ -1,100 +1,72 @@
 #!/usr/bin/env perl
 
-package Model;
-
-use ORLite {
-    file    => 'cpanmeta.db',
-    cleanup => 'VACUUM',
-    create  => sub {
-        my $dbh = shift;
-        $dbh->do(
-            'CREATE TABLE package (name     TEXT NOT NULL UNIQUE PRIMARY KEY,
-                                   distfile TEXT NOT NULL,
-                                   version  TEXT
-                                  );'
-        );
-    },
-};
-
-sub get_info_for {
-    return Model->selectrow_hashref(
-        "SELECT distfile, version
-           FROM package
-           WHERE name = ?", {}, $_[0],
-    );
-}
-
-package Mojolicious::Command::Initdb;
-
-use base 'Mojo::Command';
-
-use Mojo::Client;
-use Parse::CPAN::Packages;
-
-__PACKAGE__->attr( description => <<'EOF');
-Initialize CPAN Meta database.
-EOF
-__PACKAGE__->attr( usage => <<'EOF');
-usage: $0 initdb
-EOF
-
-# HOMER: nu-cu-ler its pronounce nu-cu-ler
-sub run {
-    my $self = shift;
-
-    # CPAN Package List
-    my $details = Mojo::Client->new->get(
-        "http://www.cpan.org/modules/02packages.details.txt.gz" )
-      ->success->body;
-    my $p = Parse::CPAN::Packages->new($details);
-
-    # Clear the database
-    Model::Package->truncate;
-
-    # push to DB
-    Model->begin;
-    for my $pkg ( $p->packages ) {
-        my $dist = $pkg->distribution;
-        Model::Package->create(
-            name     => $pkg->package,
-            distfile => $dist->prefix,
-            version  => $dist->version,
-        );
-    }
-    Model->commit;
-
-    return $self;
-}
-
-package main;
-
 use Mojolicious::Lite;
-use MojoX::Renderer::YAML;
+
+use File::Basename 'dirname';
+use File::Spec;
+
+use lib join '/', File::Spec->splitdir(dirname(__FILE__)), 'lib';
+use lib join '/', File::Spec->splitdir(dirname(__FILE__)), '..', 'lib';
+
+use Model::CPANMetaDB;
 
 # not application/x-yaml for now
-app->types->type( yml => 'text/x-yaml' );
-my $render = MojoX::Renderer::YAML->build( SortKeys => 1 );
-app->renderer->add_handler( yml => $render );
+app->types->type(yml => 'text/x-yaml');
 
 # /
-get '/' => sub { shift->render_static('index.html') };
+get '/' => 'index';
 
 # /v1.0/package/Some::Module::Name
 get '/v1.0/package/:name' => sub {
-    my $self = shift;
+  my $self = shift;
 
-    my $result = Model::get_info_for($self->param('name'));
+  my $result = Model::CPANMetaDB::get_info_for($self->param('name'));
 
-    if ( ref $result ) {
-        $self->render(
-            format  => 'yml',
-            handler => 'yml',
-            result  => $result,
-        );
-    }
-    else {
-        $self->render_text( '', status => 404 );
-    }
-};
+  if (ref $result) {
+    $self->render(format => 'yml', result => $result,);
+  }
+  else {
+    $self->render_text('', status => 404);
+  }
+} => 'package';
 
 app->start;
+
+__DATA__
+@@ index.html.ep
+<!doctype><html>
+<head><title>CPAN Meta DB</title></head>
+<body>
+<h1>Zak's alternate CPAN Meta DB</h1>
+<p class="info">
+This is an alternate site to Tatsuhiko
+Miyagawa's <a href="http://cpanmetadb.appspot.com">CPAN Meta DB</a>
+hosted on Google's AppEngine.  Like that site, it implements package
+metadata lookup
+(<code>http://cpanmetadb.zakame.net/v1.0/package/Module::Name</code>).
+</p>
+<p class="source">
+<a href="https://github.com/zakame/cpanmetadb">Source</a> is here,
+implemented in pure Perl
+using <a href="http://mojolicio.us">Mojolicious</a> running
+on <a href="http://plackperl.org">Plack</a>.
+</p>
+<h2>APIs</h2>
+<dl>
+<dt><code>/v1.0/package/Package::Name</code><dt>
+<dd>
+Returns the latest distribution file path that contains the package and
+its version string ('undef' is a valid version string) in YAML
+format. Returns 404 status code if the package is not found.
+</dd>
+</dl>
+<div id="footer">
+Visit my <a href="http://blogs.perl.org/users/zak_b_elep">blog</a> too.
+</div>
+</body>
+</html>
+
+@@ package.yml.ep
+---
+distfile: <%= $result->{distfile} %>
+version: <%= $result->{version} %>
